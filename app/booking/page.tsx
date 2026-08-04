@@ -19,13 +19,32 @@ export default function BookingPage() {
 
   useEffect(() => {
     // Check if user is authenticated
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser({
-        id: currentUser.id,
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
-      });
+    try {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        setUser({
+          id: currentUser.id,
+          firstName: currentUser.firstName,
+          lastName: currentUser.lastName,
+        });
+      }
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+    }
+
+    // Check if a doctor was pre-selected from doctor card
+    const preSelectedDoctorId = sessionStorage.getItem('selectedDoctorId');
+    const preSelectedDoctorName = sessionStorage.getItem('selectedDoctorName');
+    
+    if (preSelectedDoctorId && preSelectedDoctorName) {
+      const doctor = doctors.find(d => d.id === parseInt(preSelectedDoctorId));
+      if (doctor) {
+        setSelectedDoctor({ id: doctor.id, name: doctor.name });
+        setShowForm(true);
+        // Clear sessionStorage after using
+        sessionStorage.removeItem('selectedDoctorId');
+        sessionStorage.removeItem('selectedDoctorName');
+      }
     }
   }, []);
 
@@ -68,8 +87,8 @@ export default function BookingPage() {
   return (
     <div className="flex flex-col flex-1 bg-neutral-50 dark:bg-neutral-900">
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-4">
+        <div className="mb-4">
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
             Book Appointment
           </h1>
           <p className="text-lg text-neutral-600 dark:text-neutral-400">
@@ -79,19 +98,19 @@ export default function BookingPage() {
 
         {!showForm ? (
           /* Doctor Selection */
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6 dark:bg-neutral-800">
-              <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50 mb-4">
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg shadow-md p-4 dark:bg-neutral-800">
+              <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
                 Select a Doctor
               </h2>
-              <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+              <p className="text-neutral-600 dark:text-neutral-400 mb-4">
                 Choose from our list of qualified healthcare professionals
               </p>
 
               {/* Search and Filter */}
-              <div className="mb-6 space-y-4">
+              <div className="mb-4 space-y-3">
                 <div>
-                  <label htmlFor="search" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label htmlFor="search" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Search Doctors
                   </label>
                   <input
@@ -104,7 +123,7 @@ export default function BookingPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="specialty" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label htmlFor="specialty" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Filter by Specialty
                   </label>
                   <select

@@ -10,13 +10,16 @@ import { useToast } from "@/components/ui/toast";
 import { FormField, TextAreaField, FormActions, ErrorAlert } from "@/components/forms/form-components";
 import { isRequired, hasMinLength, isNotPastDate, VALIDATION_ERRORS } from "@/utils/validation";
 import { getMinDate } from "@/utils/date";
-import { sendUserBookingConfirmation, sendDoctorBookingNotification } from "@/utils/common/email-service";
-import { doctors } from "@/utils/data/doctors";
+import { sendBookingConfirmationViaEmailJS, sendDoctorNotificationViaEmailJS, initEmailJS } from "@/lib/emailjs-service";
+
+// Doctor email configuration - all doctor notifications go to this email
+const DOCTOR_EMAIL = 'YOUR_DOCTOR_EMAIL@example.com';
 
 interface AppointmentFormData {
-  firstName: string;
-  lastName: string;
+  phoneNumber: string;
+  idNumber: string;
   date: string;
+  time: string;
   reason: string;
 }
 
@@ -27,7 +30,10 @@ interface StoredAppointment {
   doctorName?: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
+  idNumber?: string;
   date: string;
+  time: string;
   reason: string;
   createdAt: string;
 }
@@ -49,10 +55,12 @@ export function AppointmentBookingForm({
 }: AppointmentBookingFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
+  const [currentUser, setCurrentUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
   const [formData, setFormData] = useState<AppointmentFormData>({
-    firstName: "",
-    lastName: "",
+    phoneNumber: "",
+    idNumber: "",
     date: "",
+    time: "",
     reason: "",
   });
 
@@ -65,15 +73,26 @@ export function AppointmentBookingForm({
   useEffect(() => {
     try {
       const currentUser = getCurrentUser();
-      if (!currentUser && userId) {
-        // Only redirect if userId is provided (meaning we need authentication)
-        router.push("/login");
+      if (!currentUser) {
+        // Redirect to sign-up page if not authenticated
+        router.push("/sign-up");
+        return;
       }
+      // Set current user for form display
+      setCurrentUser({
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
+        email: currentUser.email
+      });
+      
+      // Initialize EmailJS
+      initEmailJS();
     } catch (error) {
       console.error("Error checking authentication:", error);
-      // Continue without authentication if check fails
+      // Redirect to sign-up page on error
+      router.push("/sign-up");
     }
-  }, [router, userId]);
+  }, [router]);
 
   // Load existing appointments from localStorage on component mount
   const getExistingAppointments = (): StoredAppointment[] => {
@@ -100,48 +119,26 @@ export function AppointmentBookingForm({
     );
   };
 
-  // Save appointment to localStorage
-  // Save appointment to localStorage
+  // Save appointment to localStorage (this function is now handled inline in handleSubmit)
   const saveAppointmentToStorage = (data: AppointmentFormData): void => {
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
-    const newAppointment: StoredAppointment = {
-      id: Date.now().toString(),
-      userId,
-      doctorId,
-      doctorName,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      date: data.date,
-      reason: data.reason,
-      createdAt: new Date().toISOString(),
-    };
-
-    const existingAppointments = getExistingAppointments();
-    const updatedAppointments = [...existingAppointments, newAppointment];
-    
-    try {
-      localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
-    } catch (error) {
-      console.error('Error saving appointment to localStorage:', error);
-      throw new Error('Failed to save appointment');
-    }
+    // This function is now handled inline in handleSubmit to include currentUser data
+    console.log('saveAppointmentToStorage called with:', data);
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<AppointmentFormData> = {};
     setDuplicateError(null);
 
-    // First name validation
-    if (!isRequired(formData.firstName)) {
-      newErrors.firstName = VALIDATION_ERRORS.REQUIRED("First name");
+    // Phone number validation
+    if (!isRequired(formData.phoneNumber)) {
+      newErrors.phoneNumber = VALIDATION_ERRORS.REQUIRED("Phone number");
+    } else if (!/^\d{10,15}$/.test(formData.phoneNumber.replace(/\D/g, ''))) {
+      newErrors.phoneNumber = "Please enter a valid phone number (10-15 digits)";
     }
 
-    // Last name validation
-    if (!isRequired(formData.lastName)) {
-      newErrors.lastName = VALIDATION_ERRORS.REQUIRED("Last name");
+    // ID number validation
+    if (!isRequired(formData.idNumber)) {
+      newErrors.idNumber = VALIDATION_ERRORS.REQUIRED("ID number");
     }
 
     // Date validation
@@ -153,8 +150,12 @@ export function AppointmentBookingForm({
       // Duplicate appointment validation
       if (checkForDuplicate(doctorId, formData.date)) {
         setDuplicateError(VALIDATION_ERRORS.DUPLICATE_APPOINTMENT);
-        newErrors.date = "Duplicate appointment";
       }
+    }
+
+    // Time validation
+    if (!isRequired(formData.time)) {
+      newErrors.time = VALIDATION_ERRORS.REQUIRED("Preferred time");
     }
 
     // Reason validation
@@ -181,24 +182,61 @@ export function AppointmentBookingForm({
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
-      // Save to localStorage
-      saveAppointmentToStorage(formData);
+      // Get current user info
+      const currentUser = getCurrentUser();
+      const patientEmail = currentUser?.email || 'user@example.com';
+      const patientName = `${currentUser?.firstName} ${currentUser?.lastName}`;
 
-      // Get doctor email from doctors data
-      const doctor = doctors.find(d => d.id === parseInt(doctorId));
-      const doctorEmail = doctor?.email || 'doctor@example.com';
+      // Save to localStorage with phone and ID info
+      const appointmentData = {
+        ...formData,
+        firstName: currentUser?.firstName || '',
+        lastName: currentUser?.lastName || ''
+      };
+      
+      // Manually save to localStorage
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      const newAppointment: StoredAppointment = {
+        id: Date.now().toString(),
+        userId,
+        doctorId,
+        doctorName,
+        firstName: currentUser?.firstName || '',
+        lastName: currentUser?.lastName || '',
+        phoneNumber: formData.phoneNumber,
+        idNumber: formData.idNumber,
+        date: formData.date,
+        time: formData.time === 'morning' ? '8:00 AM - 12:00 PM' : '2:00 PM - 5:00 PM',
+        reason: formData.reason,
+        createdAt: new Date().toISOString(),
+      };
+
+      const existingAppointments = getExistingAppointments();
+      const updatedAppointments = [...existingAppointments, newAppointment];
+      
+      try {
+        localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
+      } catch (error) {
+        console.error('Error saving appointment to localStorage:', error);
+        throw new Error('Failed to save appointment');
+      }
+
+      // Use single doctor email for all notifications
+      const doctorEmail = DOCTOR_EMAIL;
 
       // Send confirmation email to user
       try {
-        await sendUserBookingConfirmation({
-          userName: `${formData.firstName} ${formData.lastName}`,
-          userEmail: getCurrentUser()?.email || 'user@example.com',
-          doctorName: doctorName || 'Selected Doctor',
-          doctorEmail: doctorEmail,
-          date: formData.date,
-          time: 'Not specified', // You may want to add time field to form
-          reason: formData.reason
-        });
+        await sendBookingConfirmationViaEmailJS(
+          patientName,
+          patientEmail,
+          doctorName || 'Selected Doctor',
+          formData.date,
+          formData.time === 'morning' ? '8:00 AM - 12:00 PM' : '2:00 PM - 5:00 PM',
+          formData.reason
+        );
         showToast("Confirmation email sent!", "info");
       } catch (emailError) {
         console.error("Failed to send user email:", emailError);
@@ -207,19 +245,48 @@ export function AppointmentBookingForm({
 
       // Send notification email to doctor
       try {
-        await sendDoctorBookingNotification({
-          userName: `${formData.firstName} ${formData.lastName}`,
-          userEmail: getCurrentUser()?.email || 'user@example.com',
-          doctorName: doctorName || 'Selected Doctor',
-          doctorEmail: doctorEmail,
-          date: formData.date,
-          time: 'Not specified',
-          reason: formData.reason
-        });
+        await sendDoctorNotificationViaEmailJS(
+          patientName,
+          patientEmail,
+          doctorName || 'Selected Doctor',
+          doctorEmail,
+          formData.date,
+          formData.time === 'morning' ? '8:00 AM - 12:00 PM' : '2:00 PM - 5:00 PM',
+          formData.reason
+        );
         showToast("Doctor notification sent!", "info");
       } catch (emailError) {
         console.error("Failed to send doctor email:", emailError);
         // Continue anyway as email sending is not critical
+      }
+
+      // Save booking to Google Sheets via API
+      try {
+        const response = await fetch('/api/google-sheets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            patientName: patientName,
+            patientEmail: patientEmail,
+            phoneNumber: formData.phoneNumber,
+            idNumber: formData.idNumber,
+            doctorName: doctorName || 'Selected Doctor',
+            date: formData.date,
+            time: formData.time === 'morning' ? '8:00 AM - 12:00 PM' : '2:00 PM - 5:00 PM',
+            reason: formData.reason
+          }),
+        });
+
+        if (response.ok) {
+          showToast("Booking saved to records!", "info");
+        } else {
+          console.error("Failed to save to Google Sheets:", await response.text());
+        }
+      } catch (sheetsError) {
+        console.error("Failed to save to Google Sheets:", sheetsError);
+        // Continue anyway as Sheets saving is not critical
       }
 
       // Call parent callback if provided
@@ -235,8 +302,8 @@ export function AppointmentBookingForm({
 
       // Reset form after successful submission
       setFormData({
-        firstName: "",
-        lastName: "",
+        phoneNumber: "",
+        idNumber: "",
         date: "",
         reason: "",
       });
@@ -302,29 +369,37 @@ export function AppointmentBookingForm({
           </h2>
           
           <div className="space-y-4">
-            {/* Name Fields - Responsive Grid */}
+            {/* Patient Name (Read-only from logged-in user) */}
+            <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg p-4">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">Patient Name</p>
+              <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+                {currentUser?.firstName} {currentUser?.lastName}
+              </p>
+            </div>
+
+            {/* Contact Information Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                label="First Name"
-                id="firstName"
-                name="firstName"
-                type="text"
-                placeholder="Enter first name"
-                value={formData.firstName}
+                label="Phone Number"
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phoneNumber}
                 onChange={handleInputChange}
-                error={errors.firstName}
+                error={errors.phoneNumber}
                 required
               />
 
               <FormField
-                label="Last Name"
-                id="lastName"
-                name="lastName"
+                label="ID Number"
+                id="idNumber"
+                name="idNumber"
                 type="text"
-                placeholder="Enter last name"
-                value={formData.lastName}
+                placeholder="Enter ID number"
+                value={formData.idNumber}
                 onChange={handleInputChange}
-                error={errors.lastName}
+                error={errors.idNumber}
                 required
               />
             </div>
@@ -354,6 +429,54 @@ export function AppointmentBookingForm({
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Select a date for your appointment
             </p>
+
+            {/* Time Selection */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Preferred Time <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  formData.time === 'morning' 
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                    : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500'
+                }`}>
+                  <input
+                    type="radio"
+                    name="time"
+                    value="morning"
+                    checked={formData.time === 'morning'}
+                    onChange={handleInputChange}
+                    className="sr-only"
+                  />
+                  <div className="text-center">
+                    <p className="font-semibold text-neutral-900 dark:text-neutral-50">Morning</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">8:00 AM - 12:00 PM</p>
+                  </div>
+                </label>
+                <label className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  formData.time === 'afternoon' 
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                    : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500'
+                }`}>
+                  <input
+                    type="radio"
+                    name="time"
+                    value="afternoon"
+                    checked={formData.time === 'afternoon'}
+                    onChange={handleInputChange}
+                    className="sr-only"
+                  />
+                  <div className="text-center">
+                    <p className="font-semibold text-neutral-900 dark:text-neutral-50">Afternoon</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">2:00 PM - 5:00 PM</p>
+                  </div>
+                </label>
+              </div>
+              {errors.time && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.time}</p>
+              )}
+            </div>
 
             {/* Visit Reason */}
             <TextAreaField

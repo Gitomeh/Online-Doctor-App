@@ -80,8 +80,8 @@ export default function LoginPage() {
       // Show success toast
       showToast("Login successful! Welcome back.", "success");
 
-      // Redirect to booking page (instead of home)
-      router.push("/booking");
+      // Refresh the page to update UI state
+      window.location.reload();
     } catch (error) {
       console.error("Error during login:", error);
       setGeneralError("Login failed. Please try again.");

@@ -32,6 +32,17 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.example
+
+# credentials
+credentials.json
+service-account.json
+*.pem
+private_key.json
+
+# Google Sheets
+google-sheets-credentials.json
 
 # vercel
 .vercel

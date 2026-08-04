@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { generateUserId, getUserByEmail, saveUser, setCurrentUser } from "@/util
 import { useToast } from "@/components/ui/toast";
 import { FormField, ErrorAlert } from "@/components/forms/form-components";
 import { isValidEmail, isValidPassword, isRequired, hasMinLength, VALIDATION_ERRORS } from "@/utils/validation";
-import { sendWelcomeEmail } from "@/utils/common/email-service";
+import { sendWelcomeEmailViaEmailJS, initEmailJS } from "@/lib/emailjs-service";
 
 interface SignUpFormData {
   firstName: string;
@@ -33,6 +33,11 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Partial<SignUpFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Initialize EmailJS on component mount
+  useEffect(() => {
+    initEmailJS();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SignUpFormData> = {};
@@ -115,10 +120,10 @@ export default function SignUpPage() {
 
       // Send welcome email
       try {
-        await sendWelcomeEmail({
-          firstName: newUser.firstName,
-          email: newUser.email
-        });
+        await sendWelcomeEmailViaEmailJS(
+          newUser.firstName,
+          newUser.email
+        );
         showToast("Welcome email sent!", "info");
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
@@ -128,8 +133,8 @@ export default function SignUpPage() {
       // Show success toast
       showToast("Account created successfully! You are now logged in.", "success");
 
-      // Redirect to booking page (instead of home)
-      router.push("/booking");
+      // Refresh the page to update UI state
+      window.location.reload();
     } catch (error) {
       console.error("Error during sign up:", error);
       setGeneralError("Failed to create account. Please try again.");

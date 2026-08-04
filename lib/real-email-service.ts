@@ -1,6 +1,6 @@
 /**
- * Email Service
- * Uses the real email service via API route
+ * Real Email Service using API route
+ * This replaces the mock email service with actual email sending via server API
  */
 
 export interface EmailData {
@@ -26,7 +26,7 @@ export interface BookingConfirmationData {
 }
 
 /**
- * Send email using the API route
+ * Send real email using API route
  */
 export async function sendEmail(emailData: EmailData): Promise<boolean> {
   try {
@@ -39,9 +39,7 @@ export async function sendEmail(emailData: EmailData): Promise<boolean> {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Email API error:', errorData);
-      throw new Error(errorData.error || 'Failed to send email');
+      throw new Error('Failed to send email via API');
     }
     
     const result = await response.json();
@@ -50,8 +48,7 @@ export async function sendEmail(emailData: EmailData): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('❌ Error sending email:', error);
-    // Don't throw error to allow booking to continue even if email fails
-    return false;
+    throw error;
   }
 }
 
@@ -94,7 +91,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${window.location.origin}/booking" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="http://localhost:3000/booking" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               Book Your First Appointment
             </a>
           </div>
@@ -179,7 +176,7 @@ export async function sendUserBookingConfirmation(data: BookingConfirmationData)
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${window.location.origin}/my-appointments" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="http://localhost:3000/my-appointments" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
               View My Appointments
             </a>
           </div>
@@ -211,7 +208,7 @@ export async function sendUserBookingConfirmation(data: BookingConfirmationData)
  * Send booking notification to doctor
  */
 export async function sendDoctorBookingNotification(data: BookingConfirmationData): Promise<boolean> {
-  const { doctorName, doctorEmail, userName, date, time, reason } = data;
+  const { userName, userEmail, doctorName, doctorEmail, date, time, reason } = data;
   
   // Use the configured doctor email from environment variable
   const configuredDoctorEmail = process.env.DOCTOR_EMAIL || doctorEmail;
@@ -222,7 +219,7 @@ export async function sendDoctorBookingNotification(data: BookingConfirmationDat
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>New Appointment - DocBook</title>
+      <title>New Booking - DocBook</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
       <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -232,19 +229,29 @@ export async function sendDoctorBookingNotification(data: BookingConfirmationDat
         </div>
         
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-          <h2 style="color: #333; margin-top: 0;">New Appointment Scheduled 📅</h2>
+          <h2 style="color: #333; margin-top: 0;">New Appointment Booking 📅</h2>
           
           <p style="color: #666; margin-bottom: 20px;">
-            Dear Dr. ${doctorName}, you have a new appointment request:
+            Hello ${doctorName}, you have a new appointment booking:
           </p>
           
           <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-            <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
+            <h3 style="color: #333; margin-top: 0;">Patient Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Patient:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Patient Name:</td>
                 <td style="padding: 8px 0; color: #333;">${userName}</td>
               </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Patient Email:</td>
+                <td style="padding: 8px 0; color: #333;">${userEmail}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #22c55e;">
+            <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Date:</td>
                 <td style="padding: 8px 0; color: #333;">${date}</td>
@@ -260,21 +267,11 @@ export async function sendDoctorBookingNotification(data: BookingConfirmationDat
             </table>
           </div>
           
-          <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8;">
-            <p style="color: #0c5460; margin: 0; font-size: 14px;">
-              <strong>Action Required:</strong> Please review this appointment and confirm availability in your DocBook dashboard.
-            </p>
-          </div>
-          
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${window.location.origin}/my-appointments" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              View Appointments
+            <a href="http://localhost:3000/my-appointments" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View All Appointments
             </a>
           </div>
-          
-          <p style="color: #666; font-size: 14px; text-align: center; margin-top: 30px;">
-            Contact support if you need to make any changes to this appointment.
-          </p>
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
             <p style="color: #999; font-size: 12px; margin: 0;">
@@ -289,31 +286,8 @@ export async function sendDoctorBookingNotification(data: BookingConfirmationDat
   
   return sendEmail({
     to: configuredDoctorEmail,
-    subject: `New Appointment with ${userName} - DocBook`,
+    subject: 'New Appointment Booking - DocBook',
     html,
-    text: `New appointment with ${userName} on ${date} at ${time}. Reason: ${reason}`
+    text: `New appointment booking from ${userName} (${userEmail}) on ${date} at ${time}. Reason: ${reason}`
   });
-}
-
-/**
- * Get all sent emails (for demo purposes)
- */
-export function getSentEmails(): any[] {
-  try {
-    return JSON.parse(localStorage.getItem('sentEmails') || '[]');
-  } catch (error) {
-    console.error('Error retrieving sent emails:', error);
-    return [];
-  }
-}
-
-/**
- * Clear sent emails (for demo purposes)
- */
-export function clearSentEmails(): void {
-  try {
-    localStorage.removeItem('sentEmails');
-  } catch (error) {
-    console.error('Error clearing sent emails:', error);
-  }
 }

@@ -26,19 +26,6 @@ export function Header() {
 
   useEffect(() => {
     checkAuth();
-    
-    // Listen for auth changes via localStorage
-    const handleStorageChange = () => {
-      checkAuth();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('focus', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleStorageChange);
-    };
   }, []);
 
   const handleLogout = () => {
@@ -49,18 +36,20 @@ export function Header() {
   };
 
   const publicNavigation = [
-    { name: "Appointment Booking", href: "/booking" },
-    { name: "Health Hub", href: "/health-hub" },
-    { name: "Health Check", href: "/health-check" },
-    { name: "About", href: "/about" },
+    { name: "SMART HEALTH SCAN", href: "/symptom-check" },
+    { name: "BOOK APPOINTMENT", href: "/booking" },
+    { name: "HEALTH HUB", href: "/health-hub" },
+    { name: "HEALTH CHECK", href: "/health-check" },
+    { name: "ABOUT", href: "/about" },
   ];
 
   const authenticatedNavigation = [
-    { name: "Appointment Booking", href: "/booking" },
-    { name: "My Appointments", href: "/my-appointments" },
-    { name: "Health Hub", href: "/health-hub" },
-    { name: "Health Check", href: "/health-check" },
-    { name: "About", href: "/about" },
+    { name: "SMART HEALTH SCAN", href: "/symptom-check" },
+    { name: "BOOK APPOINTMENT", href: "/booking" },
+    { name: "MY APPOINTMENTS", href: "/my-appointments" },
+    { name: "HEALTH HUB", href: "/health-hub" },
+    { name: "HEALTH CHECK", href: "/health-check" },
+    { name: "ABOUT", href: "/about" },
   ];
 
   const navigation = user ? authenticatedNavigation : publicNavigation;
@@ -91,17 +80,17 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-1">
-            <nav role="navigation" aria-label="Main navigation" className="flex items-center space-x-1">
+          <div className="hidden md:flex md:items-center md:space-x-1 flex-nowrap">
+            <nav role="navigation" aria-label="Main navigation" className="flex items-center space-x-1 flex-nowrap">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+                    "px-2 py-1 text-sm font-bold tracking-wider rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 whitespace-nowrap",
                     isActive(item.href)
-                      ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300 shadow-sm"
-                      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-blue-300 to-blue-400 text-neutral-800 dark:text-neutral-200 shadow-sm"
+                      : "bg-gradient-to-r from-blue-200 to-blue-300 text-neutral-800 dark:text-neutral-200 hover:from-blue-300 hover:to-blue-400"
                   )}
                   aria-current={isActive(item.href) ? "page" : undefined}
                 >
@@ -110,15 +99,20 @@ export function Header() {
               ))}
             </nav>
             <div className="ml-6 flex items-center space-x-3 pl-6 border-l border-neutral-200 dark:border-neutral-800">
+              <Link href="/admin">
+                <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-red-600 hover:bg-red-50 dark:text-neutral-400 dark:hover:text-red-400 dark:hover:bg-red-900/20 font-semibold">
+                  Admin
+                </Button>
+              </Link>
               {user ? (
                 <>
-                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500">
-                      <span className="text-xs font-medium text-white">
+                  <div className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-md">
+                      <span className="text-xs font-bold text-white">
                         {user.firstName.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                       {user.firstName}
                     </span>
                   </div>
@@ -126,25 +120,18 @@ export function Header() {
                     variant="ghost" 
                     size="sm" 
                     onClick={handleLogout}
-                    className="text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                    className="text-neutral-600 hover:text-red-600 hover:bg-red-50 dark:text-neutral-400 dark:hover:text-red-400 dark:hover:bg-red-900/20 font-semibold"
                     aria-label="Logout from your account"
                   >
                     Logout
                   </Button>
                 </>
               ) : (
-                <>
-                  <Link href="/login">
-                    <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800">
-                      Log In
-                    </Button>
-                  </Link>
-                  <Link href="/sign-up">
-                    <Button size="sm" className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
-                      Sign Up
-                    </Button>
-                  </Link>
-                </>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-blue-700 hover:bg-blue-50 dark:text-neutral-400 dark:hover:text-blue-400 dark:hover:bg-neutral-800 font-bold">
+                    LOG IN
+                  </Button>
+                </Link>
               )}
             </div>
           </div>
@@ -196,10 +183,10 @@ export function Header() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "block rounded-lg px-4 py-3 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+                      "block rounded-lg px-3 py-2 text-sm font-bold tracking-wider transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2",
                       isActive(item.href)
-                        ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
-                        : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                        ? "bg-gradient-to-r from-blue-300 to-blue-400 text-neutral-800 dark:text-neutral-200 shadow-sm"
+                        : "bg-gradient-to-r from-blue-200 to-blue-300 text-neutral-800 dark:text-neutral-200 hover:from-blue-300 hover:to-blue-400"
                     )}
                     onClick={() => setIsMenuOpen(false)}
                     aria-current={isActive(item.href) ? "page" : undefined}
@@ -212,17 +199,17 @@ export function Header() {
             <div className="px-4 py-4 border-t border-neutral-200 dark:border-neutral-800">
               {user ? (
                 <>
-                  <div className="flex items-center space-x-3 px-4 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg mb-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500">
-                      <span className="text-sm font-medium text-white">
+                  <div className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg mb-3 border border-blue-200 dark:border-blue-800">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-md">
+                      <span className="text-sm font-bold text-white">
                         {user.firstName.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        {user.firstName} {user.lastName}
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        {user.firstName}
                       </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">
                         Welcome back
                       </p>
                     </div>
@@ -230,7 +217,7 @@ export function Header() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800"
                     onClick={handleLogout}
                     aria-label="Logout from your account"
                   >
@@ -238,18 +225,11 @@ export function Header() {
                   </Button>
                 </>
               ) : (
-                <>
-                  <Link href="/login" onClick={() => setIsMenuOpen(false)} className="block">
-                    <Button variant="outline" size="sm" className="w-full mb-3">
-                      Log In
-                    </Button>
-                  </Link>
-                  <Link href="/sign-up" onClick={() => setIsMenuOpen(false)} className="block">
-                    <Button size="sm" className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white">
-                      Sign Up
-                    </Button>
-                  </Link>
-                </>
+                <Link href="/login" onClick={() => setIsMenuOpen(false)} className="block">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Log In
+                  </Button>
+                </Link>
               )}
             </div>
           </div>

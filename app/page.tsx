@@ -21,14 +21,14 @@ export default function Home() {
               manage your health records, and get the care you need.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
-              <Link href="/booking" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto text-sm sm:text-base">
-                  Book Appointment
+              <Link href="/symptom-check" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto text-sm sm:text-base bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold shadow-lg ring-2 ring-blue-300 ring-offset-2">
+                  Smart Health Scan
                 </Button>
               </Link>
-              <Link href="/health-check" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm sm:text-base">
-                  Health Check
+              <Link href="/booking" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm sm:text-base border-2 border-blue-500 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20 font-bold">
+                  BOOK APPOINTMENT
                 </Button>
               </Link>
             </div>
@@ -140,67 +140,67 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+          <Link href="/symptom-check" className="flex-1 min-w-[140px] max-w-[200px]">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center ring-2 ring-blue-300 ring-offset-2">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-semibold text-white">
+                Smart Health Scan
+              </h3>
+            </div>
+          </Link>
+
           <Link href="/booking" className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
               <h3 className="text-sm font-semibold text-white">
-                Book Appointment
+                BOOK APPOINTMENT
               </h3>
             </div>
           </Link>
 
           <Link href="/my-appointments" className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="p-4 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-neutral-800 h-full flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-accent-100 flex items-center justify-center mb-2">
-                <svg className="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                My Appointments
-              </h3>
-            </div>
-          </Link>
-
-          <Link href="/my-appointments" className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="p-4 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-neutral-800 h-full flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-danger-100 flex items-center justify-center mb-2">
-                <svg className="w-5 h-5 text-danger-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                Cancel Appointment
+              <h3 className="text-sm font-semibold text-white">
+                MY APPOINTMENTS
               </h3>
             </div>
           </Link>
 
           <Link href="/health-hub" className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="p-4 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-neutral-800 h-full flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-success-100 flex items-center justify-center mb-2">
-                <svg className="w-5 h-5 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                Health Hub
+              <h3 className="text-sm font-semibold text-white">
+                HEALTH HUB
               </h3>
             </div>
           </Link>
 
           <Link href="/doctors/specialties" className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="p-4 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-neutral-800 h-full flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-info-100 flex items-center justify-center mb-2">
-                <svg className="w-5 h-5 text-info-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col items-center justify-center text-center">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-2">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                Doctor Specialties
+              <h3 className="text-sm font-semibold text-white">
+                DOCTOR SPECIALTIES
               </h3>
             </div>
           </Link>

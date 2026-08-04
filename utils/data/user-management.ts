@@ -156,6 +156,19 @@ export const logout = (): void => {
   }
 };
 
+export const clearAllUsers = (): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('users');
+    localStorage.removeItem('currentUserId');
+    localStorage.removeItem('appointments');
+    console.log('✅ All accounts and data cleared from localStorage');
+  } catch (error) {
+    console.error('Error clearing all users:', error);
+    throw new Error('Failed to clear all users');
+  }
+};
+
 export const isAuthenticated = (): boolean => {
   return getCurrentUser() !== null;
 };
