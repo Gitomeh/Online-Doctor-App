@@ -29,12 +29,12 @@ export async function POST(request: NextRequest) {
     console.log('✅ Email sent successfully via Resend:', {
       to,
       subject,
-      messageId: response.id,
+      response,
       timestamp: new Date().toISOString()
     });
     
     return NextResponse.json(
-      { success: true, messageId: response.id },
+      { success: true, response },
       { status: 200 }
     );
   } catch (error) {

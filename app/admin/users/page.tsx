@@ -23,14 +23,7 @@ export default function AdminUsersPage() {
 
   const handleDeleteUser = (userId: string) => {
     if (confirm("Are you sure you want to delete this user? This will also delete all their appointments.")) {
-      const updatedUsers = users.filter(u => u.id !== userId);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      
-      // Also delete user's appointments
-      const appointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-      const updatedAppointments = appointments.filter((apt: any) => apt.userId !== userId);
-      localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
-      
+      deleteUser(userId);
       setMessage("✅ User and their appointments deleted successfully");
       loadUsers();
       setTimeout(() => setMessage(""), 3000);

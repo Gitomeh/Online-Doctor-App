@@ -156,6 +156,29 @@ export const logout = (): void => {
   }
 };
 
+export const deleteUser = (userId: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const users = getUsers();
+    const filtered = users.filter(user => user.id !== userId);
+    localStorage.setItem('users', JSON.stringify(filtered));
+    
+    // Also delete all appointments for this user
+    const appointments = getAppointments();
+    const filteredAppointments = appointments.filter(appointment => appointment.userId !== userId);
+    localStorage.setItem('appointments', JSON.stringify(filteredAppointments));
+    
+    // Clear current user if they were the deleted user
+    const currentUserId = localStorage.getItem('currentUserId');
+    if (currentUserId === userId) {
+      localStorage.removeItem('currentUserId');
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw new Error('Failed to delete user');
+  }
+};
+
 export const clearAllUsers = (): void => {
   if (typeof window === 'undefined') return;
   try {

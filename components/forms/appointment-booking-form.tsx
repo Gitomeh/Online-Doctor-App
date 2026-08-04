@@ -305,6 +305,7 @@ export function AppointmentBookingForm({
         phoneNumber: "",
         idNumber: "",
         date: "",
+        time: "",
         reason: "",
       });
 
