@@ -37,16 +37,10 @@ export function Footer() {
           {/* Brand Column */}
           <div className="col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
-                <span className="text-sm font-bold text-white">D</span>
-              </div>
-              <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                DocBook
-              </span>
+              <img src="/logo.png" alt="MediAI Logo" className="h-10 w-auto object-contain" />
             </Link>
             <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-              Book doctor appointments online. Find the right doctor for your
-              needs.
+              AI-powered healthcare platform. Get instant medical insights and book appointments with ease.
             </p>
             <div className="mt-6 flex space-x-4">
               <a
@@ -166,7 +160,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-zinc-200 pt-8 dark:border-zinc-800">
           <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-            &copy; {currentYear} DocBook. All rights reserved.
+            &copy; {currentYear} MediAI. All rights reserved.
           </p>
         </div>
       </div>

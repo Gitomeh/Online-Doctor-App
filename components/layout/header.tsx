@@ -67,14 +67,8 @@ export function Header() {
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-3 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg group-hover:shadow-xl transition-all duration-300">
-                <span className="text-lg font-bold text-white">D</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-neutral-50 dark:to-neutral-300 bg-clip-text text-transparent">
-                  DocBook
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Healthcare Made Simple</span>
+              <div className="flex h-12 w-auto items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                <img src="/logo.png" alt="MediAI Logo" className="h-12 w-auto object-contain" />
               </div>
             </Link>
           </div>
