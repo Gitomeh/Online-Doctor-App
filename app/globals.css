@@ -1,35 +1,36 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* Base colors - Light mode */
   --background: #ffffff;
-  --foreground: #0a0a0a;
+  --foreground: #1a1a1a;
   
-  /* Primary brand colors */
-  --primary-50: #eff6ff;
-  --primary-100: #dbeafe;
-  --primary-200: #bfdbfe;
-  --primary-300: #93c5fd;
-  --primary-400: #60a5fa;
-  --primary-500: #3b82f6;
-  --primary-600: #2563eb;
-  --primary-700: #1d4ed8;
-  --primary-800: #1e40af;
-  --primary-900: #1e3a8a;
+  /* Professional medical blue - Primary brand colors */
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
   
-  /* Secondary colors */
-  --secondary-50: #f0fdf4;
-  --secondary-100: #dcfce7;
-  --secondary-200: #bbf7d0;
-  --secondary-300: #86efac;
-  --secondary-400: #4ade80;
-  --secondary-500: #22c55e;
-  --secondary-600: #16a34a;
-  --secondary-700: #15803d;
-  --secondary-800: #166534;
-  --secondary-900: #14532d;
+  /* Medical teal - Secondary colors */
+  --secondary-50: #f0fdfa;
+  --secondary-100: #ccfbf1;
+  --secondary-200: #99f6e4;
+  --secondary-300: #5eead4;
+  --secondary-400: #2dd4bf;
+  --secondary-500: #14b8a6;
+  --secondary-600: #0d9488;
+  --secondary-700: #0f766e;
+  --secondary-800: #115e59;
+  --secondary-900: #134e4a;
   
-  /* Accent colors */
+  /* Professional accent - Accent colors */
   --accent-50: #fef2f2;
   --accent-100: #fee2e2;
   --accent-200: #fecaca;
@@ -41,20 +42,20 @@
   --accent-800: #991b1b;
   --accent-900: #7f1d1d;
   
-  /* Neutral colors */
+  /* Neutral colors - Professional grays */
   --neutral-50: #fafafa;
-  --neutral-100: #f5f5f5;
-  --neutral-200: #e5e5e5;
-  --neutral-300: #d4d4d4;
-  --neutral-400: #a3a3a3;
-  --neutral-500: #737373;
-  --neutral-600: #525252;
-  --neutral-700: #404040;
-  --neutral-800: #262626;
-  --neutral-900: #171717;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
   
   /* Semantic colors */
-  --success: #22c55e;
+  --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
   --info: #3b82f6;
@@ -63,34 +64,34 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* Base colors - Dark mode */
-    --background: #0a0a0a;
-    --foreground: #fafafa;
+    --background: #0f172a;
+    --foreground: #f1f5f9;
     
-    /* Primary brand colors - Dark mode */
-    --primary-50: #1e3a8a;
-    --primary-100: #1e40af;
-    --primary-200: #1d4ed8;
-    --primary-300: #2563eb;
-    --primary-400: #3b82f6;
-    --primary-500: #60a5fa;
-    --primary-600: #93c5fd;
-    --primary-700: #bfdbfe;
-    --primary-800: #dbeafe;
-    --primary-900: #eff6ff;
+    /* Professional medical blue - Dark mode */
+    --primary-50: #0c4a6e;
+    --primary-100: #075985;
+    --primary-200: #0369a1;
+    --primary-300: #0284c7;
+    --primary-400: #0ea5e9;
+    --primary-500: #38bdf8;
+    --primary-600: #7dd3fc;
+    --primary-700: #bae6fd;
+    --primary-800: #e0f2fe;
+    --primary-900: #f0f9ff;
     
-    /* Secondary colors - Dark mode */
-    --secondary-50: #14532d;
-    --secondary-100: #166534;
-    --secondary-200: #15803d;
-    --secondary-300: #16a34a;
-    --secondary-400: #22c55e;
-    --secondary-500: #4ade80;
-    --secondary-600: #86efac;
-    --secondary-700: #bbf7d0;
-    --secondary-800: #dcfce7;
-    --secondary-900: #f0fdf4;
+    /* Medical teal - Dark mode */
+    --secondary-50: #134e4a;
+    --secondary-100: #115e59;
+    --secondary-200: #0f766e;
+    --secondary-300: #0d9488;
+    --secondary-400: #14b8a6;
+    --secondary-500: #2dd4bf;
+    --secondary-600: #5eead4;
+    --secondary-700: #99f6e4;
+    --secondary-800: #ccfbf1;
+    --secondary-900: #f0fdfa;
     
-    /* Accent colors - Dark mode */
+    /* Professional accent - Dark mode */
     --accent-50: #7f1d1d;
     --accent-100: #991b1b;
     --accent-200: #b91c1c;
@@ -103,19 +104,19 @@
     --accent-900: #fef2f2;
     
     /* Neutral colors - Dark mode */
-    --neutral-50: #171717;
-    --neutral-100: #262626;
-    --neutral-200: #404040;
-    --neutral-300: #525252;
-    --neutral-400: #737373;
-    --neutral-500: #a3a3a3;
-    --neutral-600: #d4d4d4;
-    --neutral-700: #e5e5e5;
-    --neutral-800: #f5f5f5;
+    --neutral-50: #18181b;
+    --neutral-100: #27272a;
+    --neutral-200: #3f3f46;
+    --neutral-300: #52525b;
+    --neutral-400: #71717a;
+    --neutral-500: #a1a1aa;
+    --neutral-600: #d4d4d8;
+    --neutral-700: #e4e4e7;
+    --neutral-800: #f4f4f5;
     --neutral-900: #fafafa;
     
     /* Semantic colors - Dark mode */
-    --success: #4ade80;
+    --success: #34d399;
     --warning: #fbbf24;
     --error: #f87171;
     --info: #60a5fa;
@@ -177,8 +178,8 @@
   --color-info: var(--info);
   
   /* Typography */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Inter', system-ui, -apple-system, sans-serif;
   
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
