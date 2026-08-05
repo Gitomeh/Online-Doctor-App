@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Chat } from "@/components/chat/Chat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 export default function AIHealthCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const chatRef = useRef<any>(null);
 
   const handleFileUpload = (files: FileList | null) => {
     if (files) {
@@ -34,6 +36,53 @@ export default function AIHealthCheckPage() {
 
   const removeFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAnalyze = async () => {
+    if (uploadedFiles.length === 0) return;
+
+    setIsAnalyzing(true);
+
+    try {
+      // Read file contents (for text-based files)
+      const fileContents = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+            return `[File: ${file.name} (${(file.size / 1024).toFixed(2)} KB) - Type: ${file.type}]`;
+          } else {
+            const text = await file.text();
+            return `[File: ${file.name}]\nContent:\n${text}`;
+          }
+        })
+      );
+
+      // Create a message with the file information
+      const fileMessage = `I have uploaded ${uploadedFiles.length} document(s) for analysis:\n\n${fileContents.join('\n\n')}\n\nPlease analyze these documents and provide medical insights and recommendations.`;
+
+      // Send to chat by adding it as a user message
+      // We need to access the chat component's state or use a different approach
+      // For now, we'll use localStorage to communicate with the chat
+      const chatHistory = localStorage.getItem('mediai-chat-history');
+      const existingMessages = chatHistory ? JSON.parse(chatHistory) : [];
+      
+      const newMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: fileMessage,
+        createdAt: new Date()
+      };
+
+      const updatedMessages = [...existingMessages, newMessage];
+      localStorage.setItem('mediai-chat-history', JSON.stringify(updatedMessages));
+
+      // Trigger a page reload to refresh the chat with the new message
+      setTimeout(() =>window.location.reload(), 500);
+    } catch (error) {
+      console.error('Error analyzing files:', error);
+      alert('Error analyzing files. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -76,7 +125,7 @@ export default function AIHealthCheckPage() {
                   type="file"
                   id="file-upload"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
                   className="hidden"
                   onChange={(e) => handleFileUpload(e.target.files)}
                 />
@@ -102,7 +151,7 @@ export default function AIHealthCheckPage() {
                     Drop files here or click to upload
                   </p>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    PDF, JPG, PNG, DOC, DOCX (Max 10MB each)
+                    PDF, JPG, PNG, DOC, DOCX, TXT (Max 10MB each)
                   </p>
                 </label>
               </div>
@@ -169,12 +218,14 @@ export default function AIHealthCheckPage() {
                 </div>
               )}
 
-              {/* Submit Button */}
-              {uploadedFiles.length > 0 && (
-                <Button className="w-full mt-6 bg-primary-600 hover:bg-primary-700">
-                  Analyze Uploaded Documents
-                </Button>
-              )}
+              {/* Submit Button - Always visible */}
+              <Button
+                onClick={handleAnalyze}
+                disabled={uploadedFiles.length === 0 || isAnalyzing}
+                className="w-full mt-6 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 disabled:cursor-not-allowed"
+              >
+                {isAnalyzing ? 'Analyzing...' : 'Analyze Uploaded Documents'}
+              </Button>
             </Card>
           </div>
 
