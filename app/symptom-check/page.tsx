@@ -9,6 +9,7 @@ export default function AIHealthCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<string>("");
   const chatRef = useRef<any>(null);
 
   const handleFileUpload = (files: FileList | null) => {
@@ -42,9 +43,10 @@ export default function AIHealthCheckPage() {
     if (uploadedFiles.length === 0) return;
 
     setIsAnalyzing(true);
+    setAnalysisResults("");
 
     try {
-      // Read file contents (for text-based files)
+      // Read file contents and extract key details
       const fileContents = await Promise.all(
         uploadedFiles.map(async (file) => {
           if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
@@ -56,12 +58,19 @@ export default function AIHealthCheckPage() {
         })
       );
 
+      // Extract key details for summary (3 lines max)
+      const keyDetails = uploadedFiles.map(file => {
+        const sizeKB = (file.size / 1024).toFixed(2);
+        const fileType = file.type.split('/')[1]?.toUpperCase() || 'FILE';
+        return `${file.name} (${fileType}, ${sizeKB}KB)`;
+      }).join(', ');
+
+      setAnalysisResults(keyDetails);
+
       // Create a message with the file information
       const fileMessage = `I have uploaded ${uploadedFiles.length} document(s) for analysis:\n\n${fileContents.join('\n\n')}\n\nPlease analyze these documents and provide medical insights and recommendations.`;
 
       // Send to chat by adding it as a user message
-      // We need to access the chat component's state or use a different approach
-      // For now, we'll use localStorage to communicate with the chat
       const chatHistory = localStorage.getItem('mediai-chat-history');
       const existingMessages = chatHistory ? JSON.parse(chatHistory) : [];
       
@@ -76,7 +85,7 @@ export default function AIHealthCheckPage() {
       localStorage.setItem('mediai-chat-history', JSON.stringify(updatedMessages));
 
       // Trigger a page reload to refresh the chat with the new message
-      setTimeout(() =>window.location.reload(), 500);
+      setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       console.error('Error analyzing files:', error);
       alert('Error analyzing files. Please try again.');
@@ -226,6 +235,18 @@ export default function AIHealthCheckPage() {
               >
                 {isAnalyzing ? 'Analyzing...' : 'Analyze Uploaded Documents'}
               </Button>
+
+              {/* Analysis Results */}
+              {analysisResults && (
+                <div className="mt-4 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
+                  <h4 className="text-sm font-semibold text-primary-900 dark:text-primary-100 mb-2">
+                    Analysis Summary
+                  </h4>
+                  <p className="text-sm text-primary-800 dark:text-primary-200 line-clamp-3">
+                    {analysisResults}
+                  </p>
+                </div>
+              )}
             </Card>
           </div>
 
