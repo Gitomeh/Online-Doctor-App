@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ToastProvider } from "@/components/ui/toast";
+import { FloatingChatWidget } from "@/components/chat/FloatingChatWidget";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,6 +31,7 @@ export default function RootLayout({
           <Header />
           <main className="flex-1 w-full">{children}</main>
           <Footer />
+          <FloatingChatWidget />
         </ToastProvider>
       </body>
     </html>
