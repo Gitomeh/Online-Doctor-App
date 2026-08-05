@@ -67,8 +67,16 @@ export function Header() {
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-3 group">
-              <div className="flex h-12 w-auto items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                <img src="/logo.png" alt="MediAI Logo" className="h-12 w-auto object-contain" />
+              <div className="flex h-16 w-auto items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                <img src="/logo.png" alt="MediAI Logo" className="h-16 w-auto object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-400 dark:from-primary-400 dark:to-primary-600 bg-clip-text text-transparent">
+                  MediAI
+                </span>
+                <span className="text-sm text-primary-700 dark:text-primary-300 font-medium">
+                  Healthcare Made Simple
+                </span>
               </div>
             </Link>
           </div>
