@@ -92,17 +92,38 @@ export default function AIHealthCheckPage() {
       const chatHistory = localStorage.getItem('mediai-chat-history');
       const existingMessages = chatHistory ? JSON.parse(chatHistory) : [];
       
-      const newMessage = {
+      const userMessage = {
         id: Date.now().toString(),
         role: 'user',
         content: fileMessage,
         createdAt: new Date()
       };
 
-      const updatedMessages = [...existingMessages, newMessage];
+      // Call API to get AI response
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [...existingMessages, userMessage] }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const aiContent = await response.text();
+
+      const aiMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiContent,
+        createdAt: new Date()
+      };
+
+      // Save both messages to localStorage
+      const updatedMessages = [...existingMessages, userMessage, aiMessage];
       localStorage.setItem('mediai-chat-history', JSON.stringify(updatedMessages));
 
-      // Trigger a page reload to refresh the chat with the new message
+      // Trigger a page reload to refresh the chat with the new messages
       setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       console.error('Error analyzing files:', error);
