@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Chat } from "@/components/chat/Chat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import Tesseract from 'tesseract.js';
 
 export default function AIHealthCheckPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -46,11 +47,19 @@ export default function AIHealthCheckPage() {
     setAnalysisResults("");
 
     try {
-      // Read file contents and extract key details
+      // Process files and extract content
       const fileContents = await Promise.all(
         uploadedFiles.map(async (file) => {
-          if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-            return `[File: ${file.name} (${(file.size / 1024).toFixed(2)} KB) - Type: ${file.type}]`;
+          if (file.type.startsWith('image/')) {
+            // Use OCR to extract text from images
+            const { data: { text } } = await Tesseract.recognize(
+              file,
+              'eng',
+              { logger: m => console.log(m) }
+            );
+            return `[Image: ${file.name}]\nExtracted Text:\n${text}`;
+          } else if (file.type === 'application/pdf') {
+            return `[PDF: ${file.name} (${(file.size / 1024).toFixed(2)} KB) - Type: ${file.type}]`;
           } else {
             const text = await file.text();
             return `[File: ${file.name}]\nContent:\n${text}`;
@@ -58,14 +67,23 @@ export default function AIHealthCheckPage() {
         })
       );
 
-      // Extract key details for summary (3 lines max)
-      const keyDetails = uploadedFiles.map(file => {
-        const sizeKB = (file.size / 1024).toFixed(2);
-        const fileType = file.type.split('/')[1]?.toUpperCase() || 'FILE';
-        return `${file.name} (${fileType}, ${sizeKB}KB)`;
-      }).join(', ');
+      // Extract key points for summary (3 lines max)
+      const keyPoints = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          if (file.type.startsWith('image/')) {
+            const { data: { text } } = await Tesseract.recognize(file, 'eng');
+            // Extract first few meaningful lines from OCR text
+            const lines = text.split('\n').filter(line => line.trim().length > 10).slice(0, 3);
+            return `${file.name}: ${lines.join('; ')}`;
+          } else {
+            const sizeKB = (file.size / 1024).toFixed(2);
+            const fileType = file.type.split('/')[1]?.toUpperCase() || 'FILE';
+            return `${file.name} (${fileType}, ${sizeKB}KB)`;
+          }
+        })
+      );
 
-      setAnalysisResults(keyDetails);
+      setAnalysisResults(keyPoints.join(' | '));
 
       // Create a message with the file information
       const fileMessage = `I have uploaded ${uploadedFiles.length} document(s) for analysis:\n\n${fileContents.join('\n\n')}\n\nPlease analyze these documents and provide medical insights and recommendations.`;
