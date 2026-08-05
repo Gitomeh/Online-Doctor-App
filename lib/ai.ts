@@ -64,33 +64,9 @@ export async function generateAIResponse(messages: CoreMessage[]) {
     
     fullPrompt += `User: ${userContent}\n\nMediAI:`;
 
-    const result = await model.generateContentStream(fullPrompt);
-    
-    // Create a streaming response
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-            controller.enqueue(new TextEncoder().encode(chunkText));
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      }
-    });
-
-    return {
-      toDataStreamResponse: () => {
-        return new Response(stream, {
-          headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Transfer-Encoding': 'chunked',
-          },
-        });
-      }
-    } as any;
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error('Gemini API error:', error);
     // Fallback to mock response if API fails
@@ -144,28 +120,5 @@ I recommend booking an appointment with a General Practitioner for proper evalua
 
   // Select a response based on input length to vary responses
   const index = userInput.length % responses.length;
-  const mockResponse = responses[index];
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      // Simulate streaming by sending chunks
-      const chunks = mockResponse.split('').join('').match(/.{1,5}/g) || [mockResponse];
-      for (const chunk of chunks) {
-        controller.enqueue(new TextEncoder().encode(chunk));
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      controller.close();
-    }
-  });
-
-  return {
-    toDataStreamResponse: () => {
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Transfer-Encoding': 'chunked',
-        },
-      });
-    }
-  } as any;
+  return responses[index];
 }

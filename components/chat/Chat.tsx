@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 interface Message {
@@ -14,24 +12,13 @@ interface Message {
 }
 
 export function Chat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showJumpButton, setShowJumpButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
-
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    stop,
-    reload,
-    setMessages,
-  } = useChat({
-    api: "/api/chat",
-    initialMessages: [],
-  });
 
   // Load messages from localStorage on mount
   useEffect(() => {
@@ -44,7 +31,7 @@ export function Chat() {
         console.error("Failed to load chat history:", error);
       }
     }
-  }, [setMessages]);
+  }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -88,17 +75,63 @@ export function Chat() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        handleSubmit(e as any);
+        handleSubmit();
       }
     }
   };
 
-  const handleStop = () => {
-    stop();
-  };
+  const handleSubmit = async () => {
+    if (!input.trim() || isLoading) return;
 
-  const handleRegenerate = () => {
-    reload();
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input.trim(),
+      createdAt: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input.trim();
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const aiContent = await response.text();
+
+      if (!aiContent) {
+        throw new Error("Empty response from API");
+      }
+
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: aiContent,
+        createdAt: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I apologize, but I'm experiencing technical difficulties. Please try again later.",
+        createdAt: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (date?: Date) => {
@@ -255,18 +288,17 @@ export function Chat() {
 
       {/* Input Area */}
       <div className="border-t border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-900">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex gap-2">
           <div className="flex-1 relative">
             <textarea
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe your symptoms..."
               className="w-full px-4 py-3 pr-12 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-50 resize-none min-h-[48px] max-h-[120px]"
               rows={1}
               disabled={isLoading}
               aria-label="Message input"
-              aria-describedby={isLoading ? "typing-indicator" : undefined}
               style={{
                 height: "auto",
                 minHeight: "48px",
@@ -279,84 +311,29 @@ export function Chat() {
             />
           </div>
 
-          <div className="flex gap-2">
-            {isLoading ? (
-              <Button
-                type="button"
-                onClick={handleStop}
-                variant="destructive"
-                size="icon"
-                className="h-12 w-12 rounded-xl"
-                aria-label="Stop generating response"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </Button>
-            ) : (
-              <>
-                {messages.length > 0 && messages[messages.length - 1].role === "assistant" && (
-                  <Button
-                    type="button"
-                    onClick={handleRegenerate}
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-xl"
-                    aria-label="Regenerate last response"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="h-12 w-12 rounded-xl bg-primary-600 hover:bg-primary-700"
-                  aria-label="Send message"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                </Button>
-              </>
-            )}
-          </div>
-        </form>
+          <Button
+            onClick={handleSubmit}
+            disabled={!input.trim() || isLoading}
+            size="icon"
+            className="h-12 w-12 rounded-xl bg-primary-600 hover:bg-primary-700"
+            aria-label="Send message"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          </Button>
+        </div>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 text-center">
           Press Enter to send, Shift+Enter for new line
         </p>
