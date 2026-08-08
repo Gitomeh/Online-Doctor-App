@@ -1,15 +1,20 @@
 "use client";
 
-import { useChat } from 'ai/react';
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect, useCallback } from "react";
 
-export function Chat() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, stop, setMessages } = useChat({
-    api: '/api/chat',
-    initialMessages: [],
-  });
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt?: Date;
+}
 
+export function Chat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
@@ -50,13 +55,113 @@ export function Chat() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        handleSubmit(e);
+        handleSubmit();
       }
     }
   };
 
+  const handleSubmit = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input.trim(),
+      createdAt: new Date(),
+    };
+
+    // Immediately add user message to chat state
+    setMessages((prev) => [...prev, userMessage]);
+    
+    const currentInput = input.trim();
+    setInput("");
+    setIsLoading(true);
+
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get response');
+      }
+
+      // Create assistant message for streaming
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "",
+        createdAt: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Read the stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === 'text-delta' && parsed.textDelta) {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const lastMsg = updated[updated.length - 1];
+                    if (lastMsg && lastMsg.role === 'assistant') {
+                      lastMsg.content += parsed.textDelta;
+                    }
+                    return updated;
+                  });
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      // Add error message
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 2).toString(),
+        role: "assistant",
+        content: "I apologize, but I'm experiencing technical difficulties. Please try again later.",
+        createdAt: new Date(),
+      }]);
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
   const handleStop = () => {
-    stop();
+    if (abortController) {
+      abortController.abort();
+      setIsLoading(false);
+      setAbortController(null);
+    }
   };
 
   const clearHistory = () => {
@@ -231,7 +336,7 @@ export function Chat() {
           <div className="flex-1 relative">
             <textarea
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe your symptoms..."
               className="w-full px-4 py-3 pr-12 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-50 resize-none min-h-[48px] max-h-[120px]"
