@@ -1,74 +1,124 @@
-import { NextRequest } from 'next/server';
+import { AI_MODEL, SYSTEM_PROMPT, validateApiKey } from '@/lib/ai-config';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { messages } = await request.json();
+    const body = await request.json();
+    const { messages } = body;
 
+    // Validate request
     if (!messages || !Array.isArray(messages)) {
       return new Response('Invalid messages format', { status: 400 });
     }
 
-    // Simulate AI response with mock data for now
-    const responses = [
-      `Based on your symptoms, I recommend consulting a General Practitioner for a proper evaluation. 
+    // Validate API key
+    if (!validateApiKey()) {
+      return new Response(
+        JSON.stringify({ error: 'Anthropic API key not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-**Possible considerations:**
-- Your symptoms may indicate a common condition that typically resolves on its own
-- Rest and hydration are often helpful
-- Monitor for any worsening symptoms
+    // Convert messages to Anthropic format
+    const anthropicMessages = messages.map((msg: any) => ({
+      role: msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content,
+    }));
 
-**When to seek urgent care:**
-- If you experience difficulty breathing
-- Chest pain or pressure
-- Severe headache with vision changes
-- High fever that doesn't respond to medication
+    // Call Anthropic API with streaming
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'Anthropic API key not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-Please schedule an appointment with a doctor for a proper diagnosis and treatment plan.`,
-      
-      `Thank you for describing your symptoms. Based on what you've shared, I suggest seeing a specialist.
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      } as HeadersInit,
+      body: JSON.stringify({
+        model: AI_MODEL,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: anthropicMessages,
+        stream: true,
+      }),
+    });
 
-**Recommended Specialist:** General Practitioner
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Anthropic API error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Anthropic API request failed', details: error }),
+        { status: response.status, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-**Next steps:**
-1. Schedule an appointment with your primary care physician
-2. Keep a symptom diary noting frequency and severity
-3. Get adequate rest and stay hydrated
-4. Avoid self-diagnosis - a proper medical evaluation is important
+    // Create a readable stream for the response
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
 
-**Important:** If your symptoms worsen or you develop new concerning symptoms, seek medical attention promptly.`,
-      
-      `I understand you're experiencing these symptoms. While I can provide general information, please remember that I'm an AI assistant and not a substitute for professional medical advice.
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-**General guidance:**
-- Many common symptoms resolve with rest and self-care
-- Over-the-counter medications may help with discomfort
-- Stay well-hydrated and get plenty of rest
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
 
-**Red flags to watch for:**
-- Symptoms that persist longer than expected
-- Worsening condition despite self-care
-- Any new or severe symptoms
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
 
-I recommend booking an appointment with a General Practitioner for proper evaluation and personalized treatment advice.`
-    ];
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                    controller.enqueue(encoder.encode(parsed.delta.text));
+                  }
+                } catch (e) {
+                  // Skip invalid JSON
+                }
+              }
+            }
+          }
+          controller.close();
+        } catch (error) {
+          console.error('Streaming error:', error);
+          controller.error(error);
+        }
+      },
+    });
 
-    // Select a response based on message count to vary responses
-    const index = messages.length % responses.length;
-    const response = responses[index];
-
-    // Return the response as text
-    return new Response(response, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
     });
   } catch (error) {
     console.error('Chat API error:', error);
     
-    // Return a simple text response as fallback
-    const fallbackResponse = `I apologize, but I'm experiencing technical difficulties. Please try again later. If you have urgent medical concerns, please consult a healthcare professional directly.`;
-    
-    return new Response(fallbackResponse, {
-      status: 500,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to generate response',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
   }
 }

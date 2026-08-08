@@ -1,44 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useChat } from 'ai/react';
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt?: Date;
-}
+import { useState, useRef, useEffect, useCallback } from "react";
 
 export function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showJumpButton, setShowJumpButton] = useState(false);
+  const { messages, input, handleInputChange, handleSubmit, isLoading, stop, setMessages } = useChat({
+    api: '/api/chat',
+    initialMessages: [],
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
-
-  // Load messages from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("mediai-chat-history");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setMessages(parsed);
-      } catch (error) {
-        console.error("Failed to load chat history:", error);
-      }
-    }
-  }, []);
-
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem("mediai-chat-history", JSON.stringify(messages));
-    }
-  }, [messages]);
+  const [showJumpButton, setShowJumpButton] = useState(false);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -75,73 +50,22 @@ export function Chat() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        handleSubmit();
+        handleSubmit(e);
       }
     }
   };
 
-  const handleSubmit = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleStop = () => {
+    stop();
+  };
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-      createdAt: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input.trim();
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const aiContent = await response.text();
-
-      if (!aiContent) {
-        throw new Error("Empty response from API");
-      }
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: aiContent,
-        createdAt: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "I apologize, but I'm experiencing technical difficulties. Please try again later.",
-        createdAt: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+  const clearHistory = () => {
+    setMessages([]);
   };
 
   const formatTime = (date?: Date) => {
     if (!date) return "";
     return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const clearHistory = () => {
-    localStorage.removeItem("mediai-chat-history");
-    setMessages([]);
   };
 
   return (
@@ -177,10 +101,10 @@ export function Chat() {
         aria-label="Chat messages"
       >
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 mb-4 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <div className="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
               <svg
-                className="w-8 h-8 text-primary-600 dark:text-primary-400"
+                className="w-10 h-10 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -194,12 +118,27 @@ export function Chat() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-              Welcome to MediAI
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-3">
+              Hi, I'm Dr. MediAI
             </h3>
-            <p className="text-neutral-600 dark:text-neutral-400 max-w-md">
-              Describe your symptoms and I'll help you understand possible conditions and recommend the right specialist.
+            <p className="text-lg font-medium text-neutral-700 dark:text-neutral-300 mb-4">
+              Your AI Health Assistant
             </p>
+            <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-6 max-w-lg border border-primary-200 dark:border-primary-800">
+              <p className="text-neutral-800 dark:text-neutral-200 mb-4">
+                How can I help you today?
+              </p>
+              <div className="space-y-2 text-left">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  💡 <strong>Try asking:</strong>
+                </p>
+                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 ml-4">
+                  <li>• "What symptoms should I watch for?"</li>
+                  <li>• "I have a headache and fever"</li>
+                  <li>• "What specialist should I see?"</li>
+                </ul>
+              </div>
+            </div>
           </div>
         ) : (
           messages.map((message) => (
@@ -252,7 +191,7 @@ export function Chat() {
                   aria-hidden="true"
                 />
               </div>
-              <span className="sr-only">MediAI is typing</span>
+              <span className="sr-only">Dr. MediAI is typing</span>
             </div>
           </div>
         )}
@@ -292,7 +231,7 @@ export function Chat() {
           <div className="flex-1 relative">
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Describe your symptoms..."
               className="w-full px-4 py-3 pr-12 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-neutral-50 resize-none min-h-[48px] max-h-[120px]"
@@ -311,28 +250,52 @@ export function Chat() {
             />
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={!input.trim() || isLoading}
-            size="icon"
-            className="h-12 w-12 rounded-xl bg-primary-600 hover:bg-primary-700"
-            aria-label="Send message"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          {isLoading ? (
+            <Button
+              onClick={handleStop}
+              size="icon"
+              className="h-12 w-12 rounded-xl bg-red-600 hover:bg-red-700"
+              aria-label="Stop generation"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              />
-            </svg>
-          </Button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </Button>
+          ) : (
+            <Button
+              onClick={(e) => handleSubmit(e)}
+              disabled={!input.trim()}
+              size="icon"
+              className="h-12 w-12 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Send message"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+            </Button>
+          )}
         </div>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 text-center">
           Press Enter to send, Shift+Enter for new line
