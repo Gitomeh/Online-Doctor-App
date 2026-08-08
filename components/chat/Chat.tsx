@@ -379,7 +379,7 @@ export function Chat() {
             </Button>
           ) : (
             <Button
-              onClick={(e) => handleSubmit(e)}
+              onClick={() => handleSubmit()}
               disabled={!input.trim()}
               size="icon"
               className="h-12 w-12 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
