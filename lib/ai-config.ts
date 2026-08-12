@@ -8,8 +8,14 @@
  * Never use NEXT_PUBLIC_* variables for API keys as they expose secrets to the browser.
  */
 
+// AI Provider selection: 'gemini' or 'anthropic'
+export const AI_PROVIDER = process.env.AI_PROVIDER || 'gemini';
+
 // Model configuration
-export const AI_MODEL = 'claude-3-5-sonnet-20241022';
+export const GEMINI_MODEL = 'gemini-1.5-flash'; // Free tier model
+export const ANTHROPIC_MODEL = 'claude-3-5-sonnet-20241022';
+
+export const AI_MODEL = AI_PROVIDER === 'gemini' ? GEMINI_MODEL : ANTHROPIC_MODEL;
 
 // System prompt that defines the chatbot's behavior and capabilities
 export const SYSTEM_PROMPT = `You are Dr. MediAI, an AI-powered medical assistant designed to help patients understand their symptoms before booking appointments with real doctors.
@@ -82,6 +88,19 @@ export const GENERATION_CONFIG = {
 
 // Validate API key is present
 export function validateApiKey(): boolean {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  return !!apiKey && apiKey !== 'your_anthropic_api_key_here';
+  if (AI_PROVIDER === 'gemini') {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    return !!apiKey && apiKey !== 'your_gemini_api_key_here';
+  } else {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    return !!apiKey && apiKey !== 'your_anthropic_api_key_here';
+  }
+}
+
+export function getApiKey(): string | undefined {
+  if (AI_PROVIDER === 'gemini') {
+    return process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  } else {
+    return process.env.ANTHROPIC_API_KEY;
+  }
 }
