@@ -1,6 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AI_MODEL, SYSTEM_PROMPT, validateApiKey, getApiKey, AI_PROVIDER } from '@/lib/ai-config';
 
+// Development-only failure simulation
+const SIMULATE_FAILURE = process.env.SIMULATE_FAILURE === 'true';
+const FAILURE_TYPE = process.env.FAILURE_TYPE || 'mid-stream'; // 'mid-stream', '429', 'network'
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -26,6 +30,23 @@ export async function POST(request: Request) {
         JSON.stringify({ error: 'API key not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Development-only failure simulation
+    if (SIMULATE_FAILURE) {
+      if (FAILURE_TYPE === '429') {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded' }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (FAILURE_TYPE === 'network') {
+        return new Response(
+          JSON.stringify({ error: 'Network error' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Stream the response
@@ -65,6 +86,7 @@ export async function POST(request: Request) {
             };
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(startChunk)}\n\n`));
 
+            let chunkCount = 0;
             for await (const chunk of result.stream) {
               const text = chunk.text();
               if (text) {
@@ -74,6 +96,13 @@ export async function POST(request: Request) {
                   textDelta: text,
                 };
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(textDelta)}\n\n`));
+                
+                // Simulate mid-stream failure for development
+                if (SIMULATE_FAILURE && FAILURE_TYPE === 'mid-stream' && chunkCount >= 2) {
+                  controller.error(new Error('Simulated mid-stream failure'));
+                  return;
+                }
+                chunkCount++;
               }
             }
 
